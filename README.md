@@ -1,6 +1,33 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Important Note ⚠️
+
+This project uses the **Facebook Graph API** which can **only fetch data from your own Instagram Business Account**. Unlike web scraping methods, you cannot fetch data from other users' profiles (like @virat.kohli). This is a limitation of the official API.
+
 ## Getting Started
+
+### 1. Setup Environment Variables
+ Add your credentials in  `.env.local`:
+
+```
+FACEBOOK_PAGE_ACCESS_TOKEN=your_page_access_token_here
+INSTAGRAM_BUSINESS_ACCOUNT_ID=your_instagram_business_account_id_here
+```
+
+**How to get your credentials:**
+
+1. **Page Access Token:**
+   - Go to [Facebook Developers](https://developers.facebook.com/apps)
+   - Create or select your app
+   - Add "Instagram Graph API" product
+   - Generate a Page Access Token with `instagram_basic` and `pages_read_engagement` permissions
+
+2. **Instagram Business Account ID:**
+   - Use [Graph API Explorer](https://developers.facebook.com/tools/explorer)
+   - Make a request to: `/me/accounts?fields=instagram_business_account`
+   - Copy the `instagram_business_account.id` value
+
+### 2. Run the Development Server
 
 First, run the development server:
 
