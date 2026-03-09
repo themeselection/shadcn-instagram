@@ -11,10 +11,11 @@ import {
   Camera,
   CheckCircle,
   Image as ImageIcon,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -184,6 +185,22 @@ export default function InstagramProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<InstagramPost | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const POSTS_PER_PAGE = 4; // 2x2 grid
+  const totalPages = Math.ceil(posts.length / POSTS_PER_PAGE);
+  const currentPosts = posts.slice(
+    currentPage * POSTS_PER_PAGE,
+    (currentPage + 1) * POSTS_PER_PAGE,
+  );
+
+  const handlePrevious = () => {
+    setCurrentPage((prev) => (prev > 0 ? prev - 1 : totalPages - 1));
+  };
+
+  const handleNext = () => {
+    setCurrentPage((prev) => (prev < totalPages - 1 ? prev + 1 : 0));
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -200,7 +217,7 @@ export default function InstagramProfilePage() {
         }
 
         setProfile(data.profile);
-        setPosts(data.posts.slice(0, 9)); // Show latest 9 posts
+        setPosts(data.posts); // Show all posts for carousel
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
       } finally {
@@ -212,8 +229,8 @@ export default function InstagramProfilePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className=" px-4 py-8">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
         {/* Error */}
         {error && (
           <Card className="mb-6 border-red-200 bg-red-50">
@@ -231,170 +248,169 @@ export default function InstagramProfilePage() {
 
         {/* Loading Skeleton */}
         {loading && (
-          <div className="animate-pulse space-y-6">
-            {/* Profile skeleton */}
-            <Card className="max-w-xl">
-              <CardContent className="pt-6 flex flex-col items-center gap-4">
-                <div className="w-28 h-28 rounded-full bg-gray-200" />
-                <div className="space-y-2 text-center w-full max-w-md">
-                  <div className="h-6 bg-gray-200 rounded w-40 mx-auto" />
-                  <div className="h-4 bg-gray-200 rounded w-60 mx-auto" />
-                  <div className="flex gap-8 justify-center mt-4">
-                    <div className="h-4 bg-gray-200 rounded w-20" />
-                    <div className="h-4 bg-gray-200 rounded w-20" />
-                    <div className="h-4 bg-gray-200 rounded w-20" />
+          <Card className="overflow-hidden shadow-lg">
+            <CardContent className="p-0 animate-pulse">
+              {/* Profile skeleton */}
+              <div className="flex flex-col items-center px-6 pt-8 pb-6">
+                <div className="w-24 h-24 rounded-full bg-gray-200 mb-4" />
+                <div className="h-6 bg-gray-200 rounded w-40 mb-2" />
+                <div className="h-4 bg-gray-200 rounded w-32 mb-4" />
+                <div className="flex gap-8 justify-center mb-5 py-2">
+                  <div className="space-y-1">
+                    <div className="h-4 bg-gray-200 rounded w-12" />
+                    <div className="h-3 bg-gray-200 rounded w-12" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="h-4 bg-gray-200 rounded w-16" />
+                    <div className="h-3 bg-gray-200 rounded w-16" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="h-4 bg-gray-200 rounded w-16" />
+                    <div className="h-3 bg-gray-200 rounded w-16" />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-            {/* Grid skeleton */}
-            <div className="flex flex-wrap">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <div key={i} className="aspect-square bg-gray-200 rounded" />
-              ))}
-            </div>
-          </div>
+                <div className="h-9 bg-gray-200 rounded-lg w-32" />
+              </div>
+              {/* Grid skeleton */}
+              <div className="grid grid-cols-2 gap-0">
+                <div className="aspect-square bg-gray-200 border border-gray-100" />
+                <div className="aspect-square bg-gray-300 border border-gray-100" />
+                <div className="aspect-square bg-gray-300 border border-gray-100" />
+                <div className="aspect-square bg-gray-200 border border-gray-100" />
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Profile Header */}
         {profile && !loading && (
-          <>
-            <Card className="mb-6 max-w-xl mx-auto ">
-              <CardContent className="pt-8 text-center">
-                <div className="flex flex-col items-center">
-                  {/* Profile Picture with gradient ring */}
-                  <div className="relative mb-4">
-                    <div className="w-28 h-28 rounded-full p-0.5 bg-linear-to-tr from-yellow-400 via-pink-500 to-purple-600">
-                      <div className="w-full h-full rounded-full overflow-hidden bg-white p-0.5">
-                        <Avatar className="w-full h-full">
-                          <AvatarImage
-                            src={proxyImg(profile.profile_pic)}
-                            alt={profile.username}
-                          />
-                          <AvatarFallback>
-                            {profile.username.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
+          <Card className="overflow-hidden shadow-none p-0 boder-0">
+            <CardContent className="p-0">
+              {/* Profile Info Section */}
+              <div className="flex flex-col items-center px-6 pt-8 pb-6 bg-white">
+                {/* Profile Picture with gradient ring */}
+                <div className="relative mb-2">
+                  <div className="w-24 h-24 rounded-full p-0.5 bg-linear-to-tr from-yellow-400 via-pink-500 to-purple-600">
+                    <div className="w-full h-full rounded-full overflow-hidden bg-white p-0.5">
+                      <Avatar className="w-full h-full">
+                        <AvatarImage
+                          src={proxyImg(profile.profile_pic)}
+                          alt={profile.username}
+                        />
+                        <AvatarFallback className="text-2xl">
+                          {profile.username.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                     </div>
                   </div>
-
-                  {/* Username & Stats */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-center gap-2 mb-1">
-                      <h1 className="text-2xl font-bold ">
-                        {profile.username}
-                      </h1>
-                      {/* Verified badge */}
-                      <CheckCircle className="w-5 h-5 text-primary fill-current" />
-                    </div>
-                    <p className="text-muted-foreground mb-3">
-                      {profile.full_name}
-                    </p>
-                    {profile.bio && (
-                      <p className="text-sm text-foreground leading-relaxed max-w-md mx-auto mb-4">
-                        {profile.bio}
-                      </p>
-                    )}
-
-                    {/* Stats Row */}
-                    <div className="flex gap-8 justify-center items-center mt-4">
-                      <div className="text-center">
-                        <div className="font-bold  text-xl">
-                          {formatCount(profile.posts_count)}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          Posts
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-bold  text-xl">
-                          {formatCount(profile.followers)}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          Followers
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-bold  text-xl">
-                          {formatCount(profile.following)}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          Following
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Follow Button */}
-                  <Button
-                    asChild
-                    className="bg-linear-to-r from-pink-500 to-purple-600 hover:opacity-90 rounded-full"
-                  >
-                    <a
-                      href={`https://www.instagram.com/${profile.username}/`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Camera className="w-4 h-4" />
-                      Follow
-                    </a>
-                  </Button>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Posts Grid */}
-            {posts.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 flex-wrap w-full gap-0 xl:grid-cols-6">
-                {posts.map((post) => (
-                  <Button
-                    key={post.id}
-                    variant="ghost"
-                    onClick={() => setSelectedPost(post)}
-                    className="relative aspect-square group overflow-hidden rounded-sm sm:rounded p-0 h-auto hover:bg-transparent cursor-pointer"
-                  >
-                    <img
-                      src={proxyImg(post.thumbnail || post.image)}
-                      alt={post.caption}
-                      className=" object-contain group-hover:scale-105 transition-transform duration-300"
-                    />
-                    {/* Type badge */}
-                    {(post.type === "video" || post.type === "carousel") && (
-                      <Badge className="absolute top-2 right-2 bg-black/50 rounded-full p-1 border-0">
-                        <PostTypeIcon type={post.type} />
-                      </Badge>
-                    )}
-                    {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-4">
-                      <div className="flex items-center gap-1.5 text-white">
-                        <Heart className="w-5 h-5 fill-current" />
-                        <span className="text-sm font-semibold">
-                          {formatCount(post.likes)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-white">
-                        <MessageCircle className="w-5 h-5 fill-current" />
-                        <span className="text-sm font-semibold">
-                          {formatCount(post.comments)}
-                        </span>
-                      </div>
+                {/* Profile Name & Username */}
+                <div className="text-center mb-2">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <h1 className="text-xl font-bold text-gray-900">
+                      {profile.full_name || profile.username}
+                    </h1>
+                    <CheckCircle className="w-5 h-5 text-blue-500 fill-current" />
+                  </div>
+                  <p className="text-sm text-gray-600">@{profile.username}</p>
+                </div>
+
+                {/* Stats Row */}
+                <div className="flex gap-8 justify-center items-center mb-3 py-2">
+                  <div className="text-center">
+                    <div className="font-bold text-gray-900 text-base">
+                      {formatCount(profile.posts_count)}
                     </div>
-                  </Button>
-                ))}
-              </div>
-            )}
+                    <div className="text-xs text-gray-600">Posts</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-bold text-gray-900 text-base">
+                      {formatCount(profile.followers)}
+                    </div>
+                    <div className="text-xs text-gray-600">Followers</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-bold text-gray-900 text-base">
+                      {formatCount(profile.following)}
+                    </div>
+                    <div className="text-xs text-gray-600">Following</div>
+                  </div>
+                </div>
 
-            {/* No Posts */}
-            {posts.length === 0 && !profile.is_private && (
-              <Card>
-                <CardContent className="pt-20 pb-20 text-center text-muted-foreground">
-                  <ImageIcon className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                  <p className="text-lg font-medium">No posts yet</p>
-                </CardContent>
-              </Card>
-            )}
-          </>
+                {/* Follow Button */}
+                <Button
+                  asChild
+                  className="bg-[#0095f6] hover:bg-[#1877f2] text-white rounded-lg h-9 px-8 text-sm font-semibold shadow-sm"
+                >
+                  <a
+                    href={`https://www.instagram.com/${profile.username}/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    Follow
+                  </a>
+                </Button>
+              </div>
+
+              {/* Posts Carousel Section */}
+              {posts.length > 0 && (
+                <div className="relative bg-white">
+                  {/* Posts Grid - 2x2 */}
+                  <div className="grid grid-cols-2 gap-0">
+                    {currentPosts.map((post) => (
+                      <Button
+                        key={post.id}
+                        variant="ghost"
+                        onClick={() => setSelectedPost(post)}
+                        className="relative aspect-square group overflow-hidden rounded-none p-0 h-auto hover:bg-transparent cursor-pointer border border-gray-100"
+                      >
+                        <img
+                          src={proxyImg(post.thumbnail || post.image)}
+                          alt={post.caption}
+                          className="w-full h-full object-cover"
+                        />
+                      </Button>
+                    ))}
+                  </div>
+
+                  {/* Navigation Arrows */}
+                  {totalPages > 1 && (
+                    <>
+                      {/* Left Arrow */}
+                      <Button
+                        onClick={handlePrevious}
+                        variant="ghost"
+                        size="icon"
+                        className="absolute cursor-pointer left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-lg rounded-full h-10 w-10 z-10"
+                      >
+                        <ChevronLeft className="w-6 h-6 text-gray-700" />
+                      </Button>
+
+                      {/* Right Arrow */}
+                      <Button
+                        onClick={handleNext}
+                        variant="ghost"
+                        size="icon"
+                        className="absolute cursor-pointer right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-lg rounded-full h-10 w-10 z-10"
+                      >
+                        <ChevronRight className="w-6 h-6 text-gray-700" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* No Posts */}
+              {posts.length === 0 && !profile.is_private && (
+                <div className="p-12 text-center text-gray-500">
+                  <ImageIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm font-medium">No posts yet</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
       </div>
 

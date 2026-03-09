@@ -126,9 +126,8 @@ async function fetchInstagramPosts(): Promise<{
     
     console.log(`✅ Cache HIT (age: ${age}s, expires in: ${expiresIn}s)`);
     
-    return {
-      ...cached
-    };
+    // Return without _cache metadata (already cached)
+    return cached;
   }
 
   console.log(`🔄 Cache MISS - Fetching from Facebook Graph API`);
@@ -224,13 +223,7 @@ async function fetchInstagramPosts(): Promise<{
 
   const result = { 
     profile, 
-    posts,
-    _cache: {
-      hit: false,
-      age: 0,
-      expiresIn: Math.floor(CACHE_TTL / 1000),
-      cachedAt: new Date().toISOString()
-    }
+    posts
   };
   
   // 🎯 STEP 3: Cache the successful result
@@ -315,10 +308,12 @@ export async function GET(request: NextRequest) {
               : 'Make sure your Facebook Page is connected to an Instagram Business Account and your access token is valid.'
       },
       { 
-        status: isMissingCredentials ? 500 : isNotFound ? 404 : 500,
+        status: isMissingCredentials ? 500 : isNotFound ? 404 : 502, // 502 = Bad Gateway (upstream API issue)
         headers: {
-          // Cache errors for a shorter time
-          'Cache-Control': isMissingCredentials ? 'no-cache' : 'public, s-maxage=300, stale-while-revalidate=600'
+          // Don't cache configuration errors, but cache API errors briefly to prevent hammering
+          'Cache-Control': isMissingCredentials 
+            ? 'no-cache, no-store, must-revalidate' 
+            : 'public, s-maxage=60, stale-while-revalidate=120' // Cache errors for 1 min
         }
       }
     );
