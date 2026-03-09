@@ -166,9 +166,9 @@ async function fetchInstagramPosts(): Promise<{
   // Fetch posts
   const postsUrl = `https://graph.facebook.com/v25.0/${instagramBusinessAccountId}/media`;
   const postsParams = new URLSearchParams({
-    fields: 'id,caption,media_type,media_url,permalink,thumbnail_url,timestamp,like_count,comments_count',
+    fields: 'id,caption,media_type,media_url,permalink,thumbnail_url,timestamp,like_count,comments_count,children{id,media_type,media_url,thumbnail_url}',
     access_token: pageAccessToken,
-    limit: '12'
+    limit: '16'
   });
 
   const postsResponse = await fetch(`${postsUrl}?${postsParams}`, {
@@ -207,17 +207,37 @@ async function fetchInstagramPosts(): Promise<{
     timestamp: string;
     like_count?: number;
     comments_count?: number;
+    children?: {
+      data: Array<{
+        id: string;
+        media_type: string;
+        media_url: string;
+        thumbnail_url?: string;
+      }>;
+    };
   }) => {
+    // Handle carousel albums by extracting all children media
+    let carouselMedia: Array<{ url: string; type: 'IMAGE' | 'VIDEO'; thumbnail?: string }> | undefined;
+    
+    if (post.media_type === 'CAROUSEL_ALBUM' && post.children?.data) {
+      carouselMedia = post.children.data.map(child => ({
+        url: child.media_url,
+        type: child.media_type as 'IMAGE' | 'VIDEO',
+        thumbnail: child.media_type === 'VIDEO' ? child.thumbnail_url : undefined
+      }));
+    }
+
     return {
       id: post.id,
-      image: post.media_type === 'VIDEO' ? (post.thumbnail_url || post.media_url) : post.media_url,
+      image: post.media_type === 'VIDEO' ? post.media_url : post.media_url,
       thumbnail: post.media_type === 'VIDEO' ? (post.thumbnail_url || post.media_url) : post.media_url,
       caption: post.caption || '',
       likes: post.like_count || 0,
       comments: post.comments_count || 0,
       url: post.permalink || '',
       timestamp: post.timestamp || new Date().toISOString(),
-      type: post.media_type === 'VIDEO' ? 'video' : post.media_type === 'CAROUSEL_ALBUM' ? 'carousel' : 'image'
+      type: post.media_type === 'VIDEO' ? 'video' : post.media_type === 'CAROUSEL_ALBUM' ? 'carousel' : 'image',
+      carouselMedia
     };
   });
 

@@ -41,6 +41,11 @@ interface InstagramPost {
   url: string;
   timestamp: string;
   type: "image" | "video" | "carousel";
+  carouselMedia?: Array<{
+    url: string;
+    type: "IMAGE" | "VIDEO";
+    thumbnail?: string;
+  }>;
 }
 
 interface InstagramProfile {
@@ -79,6 +84,42 @@ interface PostModalProps {
 }
 
 function PostModal({ post, profile, open, onClose }: PostModalProps) {
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+
+  // Reset carousel index when post changes
+  useEffect(() => {
+    setCurrentMediaIndex(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [post.id]);
+
+  // Determine media to display
+  const mediaItems =
+    post.type === "carousel" && post.carouselMedia
+      ? post.carouselMedia
+      : [
+          {
+            url: post.image,
+            type:
+              post.type === "video" ? "VIDEO" : ("IMAGE" as "IMAGE" | "VIDEO"),
+            thumbnail: post.thumbnail,
+          },
+        ];
+
+  const currentMedia = mediaItems[currentMediaIndex];
+  const hasMultipleMedia = mediaItems.length > 1;
+
+  const goToPrevious = () => {
+    setCurrentMediaIndex((prev) =>
+      prev > 0 ? prev - 1 : mediaItems.length - 1,
+    );
+  };
+
+  const goToNext = () => {
+    setCurrentMediaIndex((prev) =>
+      prev < mediaItems.length - 1 ? prev + 1 : 0,
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent
@@ -93,17 +134,82 @@ function PostModal({ post, profile, open, onClose }: PostModalProps) {
           {formatCount(post.comments)} comments
         </DialogDescription>
         <div className="bg-white rounded-2xl overflow-hidden w-full max-h-[90vh] flex flex-col md:flex-row">
-          {/* Image */}
+          {/* Media - Image or Video */}
           <div className="relative md:w-[55%] bg-black shrink-0 aspect-square md:aspect-auto">
-            <img
-              src={proxyImg(post.image)}
-              alt={post.caption}
-              className="size-full object-fit"
-            />
-            {(post.type === "video" || post.type === "carousel") && (
-              <div className="absolute top-3 right-3 bg-black/50 rounded-full p-1.5">
-                <PostTypeIcon type={post.type} />
-              </div>
+            {currentMedia.type === "VIDEO" ? (
+              <video
+                src={proxyImg(currentMedia.url)}
+                className="size-full object-contain"
+                controls
+                autoPlay
+                loop
+                playsInline
+              >
+                <track kind="captions" />
+                Your browser does not support the video tag.
+              </video>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={proxyImg(currentMedia.url)}
+                alt={post.caption}
+                className="size-full object-fit"
+              />
+            )}
+
+            {/* Media type indicator */}
+            {!hasMultipleMedia &&
+              (post.type === "video" || post.type === "carousel") && (
+                <div className="absolute top-3 right-3 bg-black/50 rounded-full p-1.5">
+                  <PostTypeIcon type={post.type} />
+                </div>
+              )}
+
+            {/* Carousel navigation */}
+            {hasMultipleMedia && (
+              <>
+                {/* Previous button */}
+                <Button
+                  onClick={goToPrevious}
+                  variant="ghost"
+                  size="icon"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-lg rounded-full h-8 w-8 z-10"
+                >
+                  <ChevronLeft className="w-5 h-5 text-gray-700" />
+                </Button>
+
+                {/* Next button */}
+                <Button
+                  onClick={goToNext}
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-lg rounded-full h-8 w-8 z-10"
+                >
+                  <ChevronRight className="w-5 h-5 text-gray-700" />
+                </Button>
+
+                {/* Carousel indicator dots */}
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  {mediaItems.map((_, index) => (
+                    <button
+                      key={`${post.id}-media-${index}`}
+                      type="button"
+                      onClick={() => setCurrentMediaIndex(index)}
+                      className={`w-1.5 h-1.5 rounded-full transition-all ${
+                        index === currentMediaIndex
+                          ? "bg-white w-2 h-2"
+                          : "bg-white/50"
+                      }`}
+                      aria-label={`Go to media ${index + 1}`}
+                    />
+                  ))}
+                </div>
+
+                {/* Counter */}
+                <div className="absolute top-3 right-3 bg-black/50 rounded-full px-3 py-1 text-white text-sm font-medium">
+                  {currentMediaIndex + 1} / {mediaItems.length}
+                </div>
+              </>
             )}
           </div>
 
@@ -366,11 +472,21 @@ export default function InstagramProfilePage() {
                         onClick={() => setSelectedPost(post)}
                         className="relative aspect-square group overflow-hidden rounded-none p-0 h-auto hover:bg-transparent cursor-pointer border border-gray-100"
                       >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={proxyImg(post.thumbnail || post.image)}
                           alt={post.caption}
                           className="w-full h-full object-cover"
                         />
+                        {/* Overlay for video/carousel indicators */}
+                        {(post.type === "video" ||
+                          post.type === "carousel") && (
+                          <div className="absolute top-2 right-2 bg-black/60 rounded-full p-1">
+                            <PostTypeIcon type={post.type} />
+                          </div>
+                        )}
+                        {/* Hover overlay */}
+                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </Button>
                     ))}
                   </div>
